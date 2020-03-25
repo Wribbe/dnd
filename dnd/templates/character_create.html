@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <head>
+  </head>
+  <body>
+    <form action="{{ url_for('character_create') }}" method="POST">
+      <select>
+        {% for class in classes %}
+          <option>{{ class | title }}</option>
+        {% endfor %}
+      </select>
+      <input type="submit" value="Choose Class"></input>
+    </form>
+  </body>
+</html>

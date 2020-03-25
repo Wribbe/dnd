@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+  {% for message in get_flashed_messages() %}
+    <div> {{ message }} </div>
+  {% endfor %}
+  <form action="{{url_for('login')}}" method="POST">
+    <div>
+      {% for field in ['username','password'] %}
+        <input type="text" name="{{field}}" value="{{form[field]}}" placeholder="{{field | title}}"required></input>
+      {% endfor %}
+    </div>
+    <div>
+      <input type="submit" value="Login"></input>
+    </div>
+  </form>
+{% endblock %}
