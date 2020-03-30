@@ -1,3 +1,5 @@
 srd_spells
 venv
 *.sqlite3
+config.py
+__pycache__
