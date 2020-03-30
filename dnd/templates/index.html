@@ -6,6 +6,8 @@
   {% if session.username %}
     Hello {{session.username}}
   {% else %}
-    Not logged in.
+    Not logged in,
+    <a href="{{ url_for("login") }}">Log in</a> or
+    <a href="{{ url_for('signup') }}">Sign up</a>.
   {% endif %}
 {% endblock %}

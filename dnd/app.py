@@ -20,6 +20,8 @@ PATH_DB = Path('db_dnd.sqlite3')
 PATH_DB_USERS = Path('db_dnd_users.sqlite3')
 PATH_CONFIG = Path('dnd','config.py')
 
+LEN_SALT=128
+
 def get_db():
   db = sqlite3.connect(PATH_DB)
   db.row_factory = sqlite3.Row
@@ -44,9 +46,42 @@ def setup_db():
   db.close()
 
 def user_authenticate(username="", password=""):
-  if username == "admin" and password == "password":
-    return True
-  return False
+
+  db = get_db_users()
+  user = db.cursor().execute(
+    "SELECT * FROM users WHERE username = (?)", (username,)
+  ).fetchone()
+  db.close()
+
+  msg_err = "Wrong username or password"
+
+  if not user:
+    flash(msg_err)
+    return False
+
+  hash_stored = user['hash']
+  salt, hash_password = hash_stored[:LEN_SALT], hash_stored[LEN_SALT:]
+  hash_new = hash_password_get(password, salt)
+  if not hash_new == hash_password:
+    flash(msg_err)
+    return False
+
+  return True
+
+def hash_password_get(password, salt):
+  num = 1000000
+  password = password.encode()
+  return hashlib.pbkdf2_hmac('sha512', password, salt, num)
+
+def user_create(username, password):
+  salt = os.urandom(LEN_SALT)
+  db = get_db_users()
+  db.cursor().execute(
+    "INSERT INTO users (username, hash) VALUES (?,?)",
+    (username, salt+hasher)
+  )
+  db.commit()
+  db.close()
 
 def app_get():
 
@@ -104,15 +139,56 @@ def app_get():
         session['logged_in'] = True
         flash(f'Successfully logged in as {form["username"]}.')
         return redirect(url_for('index'))
-      else:
-        flash(f'Wrong username or password.')
     if 'password' in form:
       del form['password']
-    return render_template('login.html', form=form)
+    fields = [
+      ("username", "text", "Username"),
+      ("password", "password", "Password"),
+    ]
+    return render_template('login.html', form=form, fields=fields)
 
-  @app.route('/signup')
+  @app.route('/signup', methods=['GET','POST'])
   def signup():
-    return render_template('signup.html')
+    form = {}
+    def form_validate(form):
+      len_password_min, len_password_max = [10, 1024]
+      len_username_max = 25
+      if len(form['username']) > len_username_max:
+        flash(
+          f"Username should be shorter than {len_username_max} characters."
+        )
+        return
+      if len(form['password']) < len_password_min:
+        flash(
+          f"Password should be at least {len_password_min} characters long."
+        )
+        return
+      if len(form['password']) > len_password_max:
+        flash(
+          f"Password should be shorter than {len_password_max} characters."
+        )
+        return
+      if not form['username'].strip():
+        flash("Please use none-whitespace characters as username.")
+        return
+      if not form['password'] == form['password_repeat']:
+        flash("Passwords did not match, please re-enter.")
+        return
+      return True
+
+    if request.method == 'POST':
+      form = dict(request.form)
+      if form_validate(form):
+        user_create(form['username'],form['password'])
+
+    form = {k:v for k,v in form.items() if not 'password' in k}
+    fields = [
+      ("username", "text", "Username"),
+      ("password", "password", "Password"),
+      ("password_repeat", "password", "Re-enter Password"),
+    ]
+
+    return render_template('signup.html', form=form, fields=fields)
 
   @app.route('/logout', methods=['GET'])
   def logout():

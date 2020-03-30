@@ -5,8 +5,8 @@
   {% endfor %}
   <form action="{{url_for('login')}}" method="POST">
     <div>
-      {% for field in ['username','password'] %}
-        <input type="text" name="{{field}}" value="{{form[field]}}" placeholder="{{field | title}}"required></input>
+      {% for (name, type, placeholder) in fields %}
+        <input type="{{ type }}" name="{{ name }}" value="{{form[name]}}" placeholder="{{ placeholder }}"required></input>
       {% endfor %}
     </div>
     <div>
