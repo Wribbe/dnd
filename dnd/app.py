@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
+import base64
 import flask
 import json
 import os
 import sys
 import sqlite3
 import hashlib
+import importlib
+
 
 from flask import (
   render_template, g, url_for, request, flash, redirect, session
@@ -15,6 +18,7 @@ from functools import wraps
 
 PATH_DB = Path('db_dnd.sqlite3')
 PATH_DB_USERS = Path('db_dnd_users.sqlite3')
+PATH_CONFIG = Path('dnd','config.py')
 
 def get_db():
   db = sqlite3.connect(PATH_DB)
@@ -47,7 +51,13 @@ def user_authenticate(username="", password=""):
 def app_get():
 
   app = flask.Flask(__name__)
-  app.secret_key = 'arsotin23oy8n3;9nasrt09larst'
+  if not PATH_CONFIG.is_file():
+    with open(PATH_CONFIG, 'w') as fh:
+      key = base64.b64encode(os.urandom(64)).decode('utf-8')
+      fh.write(f'SECRET_KEY="{key}"'+os.linesep)
+
+  config = importlib.import_module(PATH_CONFIG.stem)
+  app.secret_key = config.SECRET_KEY
 
   def login_required(f):
     @wraps(f)
@@ -109,6 +119,7 @@ def app_get():
     for field in ['username','logged_in']:
       if field in session:
         session.pop(field)
+    flash('Successfully logged out.')
     return redirect(url_for('index'))
 
   @app.route('/user/<username>')

@@ -31,7 +31,7 @@ def main():
 
   PY = venv_py()
   args = ' '.join(sys.argv[1:])
-  call(f"{PY} {Path('dnd', 'main.py')} {args}")
+  call(f"{PY} {Path('dnd', 'app.py')} {args}")
 
 if __name__ == "__main__":
   main()

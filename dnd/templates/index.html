@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
 {% block content %}
+  {% for message in get_flashed_messages() %}
+    <div>{{ message }}</div>
+  {% endfor %}
   {% if session.username %}
     Hello {{session.username}}
   {% else %}
