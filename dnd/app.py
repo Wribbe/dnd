@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import sqlite3
+import subprocess
 import hashlib
 import importlib
 
@@ -35,7 +36,12 @@ def get_db_users():
 def setup_db():
   db = get_db()
   cursor = db.cursor()
-  spell_data = json.loads(Path('srd_spells','spells.json').read_text())
+  path_spells = Path('srd_spells','spells.json')
+  if not path_spells.is_file():
+    subprocess.call(
+      f'git clone https://github.com/vorpalhex/srd_spells'.split()
+    )
+  spell_data = json.loads(path_spells.read_text())
   classes = set()
   for spell in spell_data:
     cursor.execute('INSERT INTO spells(name) VALUES (?)', (spell['name'],))
@@ -76,6 +82,7 @@ def hash_password_get(password, salt):
 def user_create(username, password):
   salt = os.urandom(LEN_SALT)
   db = get_db_users()
+  hasher = hash_password_get(password, salt)
   db.cursor().execute(
     "INSERT INTO users (username, hash) VALUES (?,?)",
     (username, salt+hasher)
